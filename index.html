@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Comment copied</title>
+<!-- The Daily's "Copy comment" button (owner 19 Nov 2026: "we must make this copy and pastable from the email";
+     "one Copy button to copy the comment, and one link to the post"). Gmail shows emojis as pictures, which do
+     not paste; this page puts the comment on the clipboard as real text. The comment travels in the #fragment,
+     which browsers never send to the server. This page stores nothing, loads nothing else and opens nothing. -->
+<style>
+  :root { --bg:#ffffff; --fg:#1d2226; --muted:#5e6670; --box:#f4f5f7; --accent:#0a66c2; --ok:#057642; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1b1f23; --fg:#e8eaed; --muted:#a0a7ad; --box:#2a2f35; --accent:#70b5f9; --ok:#5fd394; } }
+  html, body { background:var(--bg); color:var(--fg); margin:0; font:16px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width:560px; margin:0 auto; padding:32px 16px; }
+  #status { font-size:20px; font-weight:700; margin:0 0 6px; }
+  #status.ok { color:var(--ok); }
+  #hint { color:var(--muted); margin:0 0 18px; }
+  #text { background:var(--box); border-radius:10px; padding:10px 14px; white-space:pre-wrap; word-break:break-word; font-size:14px; color:var(--muted); }
+  button { font:inherit; font-weight:600; background:var(--accent); color:#fff; border:0; border-radius:22px; padding:10px 22px; cursor:pointer; margin:0 0 18px; }
+</style>
+</head>
+<body>
+<main>
+  <p id="status">Copying…</p>
+  <p id="hint"></p>
+  <button id="again" hidden>Copy</button>
+  <div id="text"></div>
+</main>
+<script>
+(function () {
+  var status = document.getElementById('status'), hint = document.getElementById('hint');
+  var again = document.getElementById('again'), box = document.getElementById('text');
+  function b64url(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '=';
+    var bin = atob(s), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+  var text = '';
+  try { text = b64url(new URLSearchParams(location.hash.slice(1)).get('t') || ''); } catch (e) { text = ''; }
+  if (!text) { status.textContent = 'This link is broken.'; return; }
+  box.textContent = text;
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  var html = text.split(/\n\s*\n/).map(function (b) { return '<p>' + esc(b).replace(/\n/g, '<br>') + '</p>'; }).join('<p><br></p>');
+  function viaTextarea() {
+    var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+    var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); return ok;
+  }
+  function copy() {
+    if (navigator.clipboard && window.ClipboardItem) {
+      return navigator.clipboard.write([new ClipboardItem({
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+        'text/html': new Blob([html], { type: 'text/html' }) })]);
+    }
+    if (navigator.clipboard) return navigator.clipboard.writeText(text);
+    return Promise.reject(new Error('no clipboard'));
+  }
+  function ok() {
+    status.textContent = 'Copied ✓'; status.className = 'ok'; again.hidden = true;
+    hint.textContent = 'Paste it in the post’s comment box. You can close this tab.';
+  }
+  function needClick() { status.textContent = 'Press Copy'; again.hidden = false; }
+  again.addEventListener('click', function () {
+    copy().then(ok, function () { if (viaTextarea()) ok(); else status.textContent = 'Could not copy. Select the text below and copy it.'; });
+  });
+  copy().then(ok, needClick);
+})();
+</script>
+</body>
+</html>
