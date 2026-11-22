@@ -9,7 +9,11 @@
 <!-- The Daily's "Copy comment" button (owner 19 Nov 2026: "we must make this copy and pastable from the email";
      "one Copy button to copy the comment, and one link to the post"). Gmail shows emojis as pictures, which do
      not paste; this page puts the comment on the clipboard as real text. The comment travels in the #fragment,
-     which browsers never send to the server. This page stores nothing, loads nothing else and opens nothing. -->
+     which browsers never send to the server. This page stores nothing and loads nothing else.
+     Owner 22 Nov 2026: "instead of 2 buttons, there's only one click that opens both those pages". So after the
+     copy it opens the post (the "u" value in the fragment) in this same tab. Only a www.linkedin.com/posts/ or
+     /feed/update/ link is ever opened; anything else is ignored. If the browser refuses to copy without a click,
+     one button does both. -->
 <style>
   :root { --bg:#ffffff; --fg:#1d2226; --muted:#5e6670; --box:#f4f5f7; --accent:#0a66c2; --ok:#057642; }
   @media (prefers-color-scheme: dark) { :root { --bg:#1b1f23; --fg:#e8eaed; --muted:#a0a7ad; --box:#2a2f35; --accent:#70b5f9; --ok:#5fd394; } }
@@ -43,6 +47,10 @@
   try { text = b64url(new URLSearchParams(location.hash.slice(1)).get('t') || ''); } catch (e) { text = ''; }
   if (!text) { status.textContent = 'This link is broken.'; return; }
   box.textContent = text;
+  var post = '';
+  try { post = new URLSearchParams(location.hash.slice(1)).get('u') || ''; } catch (e) { post = ''; }
+  if (!/^https:\/\/www\.linkedin\.com\/(posts|feed\/update)\/[^\s"'<>]+$/.test(post)) post = '';
+  if (post) again.textContent = 'Copy and open the post';
   function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   var html = text.split(/\n\s*\n/).map(function (b) { return '<p>' + esc(b).replace(/\n/g, '<br>') + '</p>'; }).join('<p><br></p>');
   function viaTextarea() {
@@ -61,9 +69,10 @@
   }
   function ok() {
     status.textContent = 'Copied ✓'; status.className = 'ok'; again.hidden = true;
+    if (post) { hint.textContent = 'Opening the post. Paste it in the comment box.'; location.replace(post); return; }
     hint.textContent = 'Paste it in the post’s comment box. You can close this tab.';
   }
-  function needClick() { status.textContent = 'Press Copy'; again.hidden = false; }
+  function needClick() { status.textContent = post ? 'One more click' : 'Press Copy'; again.hidden = false; }
   again.addEventListener('click', function () {
     copy().then(ok, function () { if (viaTextarea()) ok(); else status.textContent = 'Could not copy. Select the text below and copy it.'; });
   });
